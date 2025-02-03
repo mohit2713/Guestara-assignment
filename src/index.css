@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Grid container */
+.timeline-container {
+  overflow: auto;
+  position: relative;
+}
+
+/* Ensure grid lines are crisp */
+.border-r, .border-b {
+  border-color: #e5e7eb;
+}
+
+.timeline-grid {
+  display: grid;
+  grid-auto-flow: dense;
+}
+
+.timeline-event {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  padding: 4px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+} 
