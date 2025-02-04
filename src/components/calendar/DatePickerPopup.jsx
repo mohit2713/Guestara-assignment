@@ -1,34 +1,26 @@
 import React from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from 'date-fns';
+import { 
+  format, 
+  startOfMonth, 
+  endOfMonth, 
+  eachDayOfInterval,
+  isSameMonth, 
+  isToday,
+  addMonths, 
+  subMonths,
+} from 'date-fns';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 
 const DatePickerPopup = ({ selectedDate, onDateSelect, onClose }) => {
   const [currentViewDate, setCurrentViewDate] = React.useState(selectedDate);
   
   const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  const currentMonth = startOfMonth(currentViewDate);
+  
+  // Get only current month days
   const daysInMonth = eachDayOfInterval({
-    start: currentMonth,
-    end: endOfMonth(currentMonth)
+    start: startOfMonth(currentViewDate),
+    end: endOfMonth(currentViewDate)
   });
-
-  // Get days from previous month to fill the first week
-  const firstDayOfMonth = currentMonth.getDay();
-  const prevMonthDays = Array.from({ length: firstDayOfMonth }, (_, i) => {
-    const date = new Date(currentMonth);
-    date.setDate(-i);
-    return date;
-  }).reverse();
-
-  // Get days for next month to fill the last week
-  const lastDayOfMonth = daysInMonth[daysInMonth.length - 1].getDay();
-  const nextMonthDays = Array.from({ length: 6 - lastDayOfMonth }, (_, i) => {
-    const date = new Date(daysInMonth[daysInMonth.length - 1]);
-    date.setDate(date.getDate() + i + 1);
-    return date;
-  });
-
-  const allDays = [...prevMonthDays, ...daysInMonth, ...nextMonthDays];
 
   const handlePrevMonth = () => {
     setCurrentViewDate(prevDate => subMonths(prevDate, 1));
@@ -37,6 +29,31 @@ const DatePickerPopup = ({ selectedDate, onDateSelect, onClose }) => {
   const handleNextMonth = () => {
     setCurrentViewDate(prevDate => addMonths(prevDate, 1));
   };
+
+  // Create weeks array for the grid
+  const weeks = [];
+  let currentWeek = [];
+  
+  // Add empty cells for days before the first of the month
+  const firstDayOfMonth = daysInMonth[0].getDay();
+  for (let i = 0; i < firstDayOfMonth; i++) {
+    currentWeek.push(null);
+  }
+
+  // Add the days of the month
+  daysInMonth.forEach((day) => {
+    if (currentWeek.length === 7) {
+      weeks.push(currentWeek);
+      currentWeek = [];
+    }
+    currentWeek.push(day);
+  });
+
+  // Add empty cells for days after the last of the month
+  while (currentWeek.length < 7) {
+    currentWeek.push(null);
+  }
+  weeks.push(currentWeek);
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-start">
@@ -82,26 +99,29 @@ const DatePickerPopup = ({ selectedDate, onDateSelect, onClose }) => {
 
         {/* Calendar grid */}
         <div className="grid grid-cols-7">
-          {allDays.map((date, index) => (
-            <button
-              key={index}
-              onClick={() => onDateSelect(date)}
-              className={`
-                p-2 text-center text-sm relative hover:bg-gray-50
-                ${!isSameMonth(date, currentViewDate) ? 'text-gray-400' : ''}
-                ${isToday(date) ? 'text-white' : ''}
-                ${
-                  isToday(date)
-                    ? 'before:absolute before:inset-1 before:bg-blue-500 before:rounded-full before:z-0'
-                    : ''
-                }
-              `}
-            >
-              <span className={`relative z-10 ${isToday(date) ? 'text-white' : ''}`}>
-                {format(date, 'd')}
-              </span>
-            </button>
-          ))}
+          {weeks.map((week, weekIndex) => 
+            week.map((date, dayIndex) => (
+              <button
+                key={`${weekIndex}-${dayIndex}`}
+                onClick={() => date && onDateSelect(date)}
+                className={`
+                  p-2 text-center text-sm relative hover:bg-gray-50
+                  ${!date ? 'text-gray-300 cursor-default' : 'text-gray-700'}
+                  ${date && isToday(date) ? 'text-white' : ''}
+                  ${
+                    date && isToday(date)
+                      ? 'before:absolute before:inset-1 before:bg-blue-500 before:rounded-full before:z-0'
+                      : ''
+                  }
+                `}
+                disabled={!date}
+              >
+                <span className={`relative z-10 ${date && isToday(date) ? 'text-white' : ''}`}>
+                  {date ? format(date, 'd') : ''}
+                </span>
+              </button>
+            ))
+          )}
         </div>
       </div>
     </div>

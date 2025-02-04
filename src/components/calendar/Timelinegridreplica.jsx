@@ -36,8 +36,7 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent }) => {
         {resources.map((resource) => (
           <React.Fragment key={resource.id}>
             {/* Resource Names - Sticky Left */}
-
-            <div className="sticky pl-2 pt-1 left-0 z-10 bg-white border-b border-r h-14 flex px-4">
+            <div className="sticky left-0 z-10 bg-white border-b border-r h-24 flex items-center px-4">
               <span className="font-medium">{resource.name}</span>
             </div>
 
@@ -45,7 +44,7 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent }) => {
             {daysInMonth.map((day) => (
               <div
                 key={`${resource.id}-${day}`}
-                className="border-b border-r h-14 hover:bg-gray-50"
+                className="border-b border-r h-24 hover:bg-gray-50"
                 onClick={() => onAddEvent(resource.id, day)}
               >
                 {events
