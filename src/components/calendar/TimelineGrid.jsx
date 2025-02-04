@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { startOfMonth, endOfMonth, eachDayOfInterval, format, isToday, differenceInDays, parseISO } from 'date-fns';
+import { startOfMonth, endOfMonth, eachDayOfInterval, format, isToday, differenceInDays, parseISO, addDays, parse, isSameDay } from 'date-fns';
 import EventModal from '../Calendar/EventModal';
 
 const TimelineGrid = ({ currentDate, resources, events, onAddEvent, onUpdateEvent, onDeleteEvent }) => {
@@ -9,10 +9,11 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent, onUpdateEven
   const [showEventModal, setShowEventModal] = useState(false);
   const [selectedResource, setSelectedResource] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [draggedEvent, setDraggedEvent] = useState(null);
   const gridRef = useRef(null);
 
-
-  
+  const HOUR_HEIGHT = 40;
+  const MINUTES_PER_PIXEL = 0.5; // Adjust this to control drag sensitivity
 
   // Updated event colors with opacity variations
   const eventColors = [
@@ -80,16 +81,13 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent, onUpdateEven
         onUpdateEvent({
           ...selectedEvent,
           ...eventData,
-          startDate: formatDate(dragStart?.date || selectedEvent.startDate),
-          endDate: formatDate(dragEnd?.date || selectedEvent.endDate)
         });
       } else {
         onAddEvent({
           ...eventData,
-          id: Date.now().toString(),
           resourceId: selectedResource,
-          startDate: formatDate(dragStart?.date),
-          endDate: formatDate(dragEnd?.date)
+          startDate: format(dragStart?.date || new Date(), 'yyyy-MM-dd'),
+          endDate: format(dragEnd?.date || dragStart?.date || new Date(), 'yyyy-MM-dd'),
         });
       }
       setShowEventModal(false);
@@ -124,6 +122,89 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent, onUpdateEven
 
   const calculateEventPosition = (eventIndex) => {
     return CELL_PADDING + (eventIndex * (EVENT_HEIGHT + EVENT_SPACING));
+  };
+
+  const handleEventDragStart = (e, event) => {
+    e.stopPropagation();
+    setDraggedEvent(event);
+    
+    // Store initial position and time
+    const initialX = e.clientX;
+    const [hours, minutes] = event.startTime.split(':').map(Number);
+    setDragStart({
+      x: initialX,
+      initialMinutes: hours * 60 + minutes
+    });
+  };
+
+  const handleEventDrag = (e, resourceId) => {
+    if (!draggedEvent || !dragStart) return;
+
+    // Calculate time adjustment based on drag distance
+    const deltaX = e.clientX - dragStart.x;
+    const minutesDelta = Math.round(deltaX * MINUTES_PER_PIXEL);
+    
+    // Update time
+    let newMinutes = dragStart.initialMinutes + minutesDelta;
+    newMinutes = Math.max(0, Math.min(23 * 60 + 59, newMinutes));
+    
+    const newHours = Math.floor(newMinutes / 60);
+    const newMins = newMinutes % 60;
+
+    // Create updated event with new time
+    const updatedEvent = {
+      ...draggedEvent,
+      startTime: `${String(newHours).padStart(2, '0')}:${String(newMins).padStart(2, '0')}`,
+      resourceId
+    };
+    
+    setDraggedEvent(updatedEvent);
+  };
+
+  const handleEventDragEnd = () => {
+    if (draggedEvent) {
+      onUpdateEvent(draggedEvent);
+    }
+    setDraggedEvent(null);
+    setDragStart(null);
+  };
+
+  const renderEvent = (event, resourceId) => {
+    const isBeingDragged = draggedEvent?.id === event.id;
+    const displayEvent = isBeingDragged ? draggedEvent : event;
+    const [startHour, startMinute] = displayEvent.startTime.split(':').map(Number);
+    const top = (startHour + startMinute / 60) * HOUR_HEIGHT;
+
+    return (
+      <div
+        key={event.id}
+        draggable
+        className="absolute left-1 right-1 rounded-md cursor-move"
+        style={{
+          top: `${top}px`,
+          height: '60px',
+          backgroundColor: event.color || '#3B82F6',
+          opacity: isBeingDragged ? 0.7 : 1,
+          zIndex: isBeingDragged ? 100 : 10
+        }}
+        onClick={() => {
+          setSelectedEvent(event);
+          setShowEventModal(true);
+        }}
+        onDragStart={(e) => handleEventDragStart(e, event)}
+        onDrag={(e) => handleEventDrag(e, resourceId)}
+        onDragEnd={handleEventDragEnd}
+      >
+        <div className="p-1 text-white h-full flex flex-col justify-between">
+          <div className="text-sm font-medium truncate">
+            {displayEvent.title}
+          </div>
+          <div className="text-xs">
+            {displayEvent.startTime} - {displayEvent.endTime}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
