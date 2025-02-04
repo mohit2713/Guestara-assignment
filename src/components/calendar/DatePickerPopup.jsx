@@ -14,7 +14,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
 const DatePickerPopup = ({ selectedDate, onDateSelect, onClose }) => {
   const [currentViewDate, setCurrentViewDate] = React.useState(selectedDate);
   
-  const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   
   // Get only current month days
   const daysInMonth = eachDayOfInterval({
@@ -63,12 +63,12 @@ const DatePickerPopup = ({ selectedDate, onDateSelect, onClose }) => {
       {/* Calendar popup */}
       <div className="absolute left-4 top-16 bg-white rounded-lg shadow-xl border p-4 min-w-[280px] z-50">
         {/* Month and Year with Navigation */}
-        <div className="flex justify-around text-center mb-4">
+        <div className="flex text-center mb-4">
           <div className="text-2xl font-normal text-blue-500">
             {format(currentViewDate, 'MMMM')}
           </div>
-          <div className="flex justify-center items-center gap-4">
-            <div className="text-2xl font-normal text-blue-500">
+          <div className="flex justify-center items-center ">
+            <div className="text-2xl font-normal pl-2 text-blue-500">
               {format(currentViewDate, 'yyyy')}
             </div>
             <div className="flex gap-2">
