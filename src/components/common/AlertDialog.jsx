@@ -39,3 +39,5 @@ export const AlertDialog = ({
     </div>
   );
 }; 
+
+export default AlertDialog;
