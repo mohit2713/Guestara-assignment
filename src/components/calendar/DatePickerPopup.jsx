@@ -63,15 +63,15 @@ const DatePickerPopup = ({ selectedDate, onDateSelect, onClose }) => {
       {/* Calendar popup */}
       <div className="absolute left-4 top-16 bg-white rounded-lg shadow-xl border p-4 min-w-[280px] z-50">
         {/* Month and Year with Navigation */}
-        <div className="flex text-center mb-4">
-          <div className="text-2xl font-normal text-blue-500">
+        <div className="flex justify-evenly text-center mb-4">
+          <div className="text-2xl w-[120px] font-normal text-blue-500">
             {format(currentViewDate, 'MMMM')}
           </div>
           <div className="flex justify-center items-center ">
             <div className="text-2xl font-normal pl-2 text-blue-500">
               {format(currentViewDate, 'yyyy')}
             </div>
-            <div className="flex gap-2">
+            <div className="ml-3 flex gap-2">
               <button 
                 className="text-blue-500 p-1 hover:bg-gray-100 rounded"
                 onClick={handlePrevMonth}

@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TimelineGrid from '../calendar/TimelineGrid';
-import DatePickerPopup from './DatePickerPopup';
+import DatePickerPopup from '../calendar/DatePickerPopup';
 import { format, addMonths, subMonths } from 'date-fns';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid';
+import { LOCAL_STORAGE_KEYS, saveToLocalStorage, getFromLocalStorage } from '../../utils/localStorage';
 
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState(() => {
+    // Initialize events from localStorage or empty array
+    return getFromLocalStorage(LOCAL_STORAGE_KEYS.EVENTS, []);
+  });
   const [showEventModal, setShowEventModal] = useState(false);
   const [selectedCell, setSelectedCell] = useState(null);
   
@@ -16,24 +20,32 @@ const Calendar = () => {
     name: `Resource ${String.fromCharCode(65 + index)}`
   }));
 
-  const handleAddEvent = (eventData) => {
-    const newEvent = {
-      ...eventData,
-      id: Date.now(), // Ensure unique ID
-    };
-    setEvents(prevEvents => [...prevEvents, newEvent]);
+  // Save events to localStorage whenever they change
+  useEffect(() => {
+    saveToLocalStorage(LOCAL_STORAGE_KEYS.EVENTS, events);
+  }, [events]);
+
+  const handleAddEvent = (newEvent) => {
+    setEvents(prevEvents => {
+      const updatedEvents = [...prevEvents, newEvent];
+      return updatedEvents;
+    });
   };
 
-  const handleUpdateEvent = (eventData) => {
-    setEvents(prevEvents => 
-      prevEvents.map(event => 
-        event.id === eventData.id ? eventData : event
-      )
-    );
+  const handleUpdateEvent = (updatedEvent) => {
+    setEvents(prevEvents => {
+      const updatedEvents = prevEvents.map(event => 
+        event.id === updatedEvent.id ? updatedEvent : event
+      );
+      return updatedEvents;
+    });
   };
 
   const handleDeleteEvent = (eventId) => {
-    setEvents(prevEvents => prevEvents.filter(event => event.id !== eventId));
+    setEvents(prevEvents => {
+      const updatedEvents = prevEvents.filter(event => event.id !== eventId);
+      return updatedEvents;
+    });
   };
 
   const handlePreviousMonth = () => {

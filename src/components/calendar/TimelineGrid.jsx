@@ -3,13 +3,8 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameDay
 import Event from '../Calendar/Event';
 import AlertDialog from '../common/AlertDialog';
 import EventModal from '../Calendar/EventModal';
+import EventDetailsModal from '../Calendar/EventDetailsModal';
 
-// const BASE_ROW_HEIGHT = 100;
-// const EVENT_HEIGHT = 30;
-// const EVENT_SPACING = 4;
-// const CELL_PADDING = 8;
-// const MIN_CELL_WIDTH = 150;
-// const RESOURCE_COLUMN_WIDTH = 200;
 
 const EVENT_COLORS = [
   { bg: '#3B82F6', hover: '#2563EB' }, // Blue
@@ -43,15 +38,16 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent, onUpdateEven
   const [dragStart, setDragStart] = useState(null);
   const [dragEnd, setDragEnd] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   const EVENT_HEIGHT = 40;
-  const MIN_CELL_HEIGHT = 120;
+  const MIN_CELL_HEIGHT = 80;
   const PADDING = 4;
-  const BASE_ROW_HEIGHT = 100;
+  const BASE_ROW_HEIGHT = 80;
   const EVENT_SPACING = 4;
   const CELL_PADDING = 8;
-  const MIN_CELL_WIDTH = 150;
-  const RESOURCE_COLUMN_WIDTH = 200;
+  const MIN_CELL_WIDTH = 80;
+  const RESOURCE_COLUMN_WIDTH = 190;
 
   const daysInMonth = eachDayOfInterval({
     start: startOfMonth(currentDate),
@@ -177,16 +173,16 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent, onUpdateEven
       if (selectedEvent) {
         // Update existing event while preserving position and date
         onUpdateEvent({
-          ...selectedEvent, // Keep all existing event data
-          ...eventData, // Update with new data
-          resourceId: selectedEvent.resourceId, // Preserve position
-          startDate: selectedEvent.startDate, // Preserve date
-          endDate: selectedEvent.endDate, // Preserve date
+          ...selectedEvent,
+          ...eventData,
+          resourceId: selectedEvent.resourceId,
+          startDate: selectedEvent.startDate,
+          endDate: selectedEvent.endDate,
         });
       } else {
-        // Create new event
+        // Create new event with a string ID (more reliable for localStorage)
         const newEvent = {
-          id: Date.now(),
+          id: `event_${Date.now()}`,
           ...eventData,
           resourceId: selectedResource,
           startDate: format(dragStart?.date || new Date(), 'yyyy-MM-dd'),
@@ -231,7 +227,7 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent, onUpdateEven
         onClick={(e) => {
           e.stopPropagation();
           setSelectedEvent(event);
-          setShowEventModal(true);
+          setShowDetailsModal(true);
         }}
         onDragStart={(e) => handleEventDragStart(e, event)}
         onMouseEnter={(e) => {
@@ -298,7 +294,7 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent, onUpdateEven
       className="relative overflow-auto"
     >
       <div className="grid" style={{
-        gridTemplateColumns: `200px repeat(${daysInMonth.length}, minmax(120px, 1fr))`,
+        gridTemplateColumns: `${RESOURCE_COLUMN_WIDTH}px repeat(${daysInMonth.length}, minmax(${MIN_CELL_WIDTH}px, 1fr))`,
         width: 'max-content'
       }}>
         {/* Header Row */}
@@ -311,7 +307,7 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent, onUpdateEven
           <div 
             key={day.toString()} 
             className={`border-b border-r p-2 h-14 ${
-              isToday(day) ? 'bg-blue-50' : ''
+              isToday(day) ? 'bg-blue-300' : ''
             }`}
           >
             <div className="text-center">
@@ -346,10 +342,11 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent, onUpdateEven
             <React.Fragment key={resource.id}>
               {/* Resource header cell */}
               <div 
-                className="sticky left-0 z-10 bg-white border-b border-r pl-2 pt-1 flex"
+                className="sticky left-0 z-20 bg-white border-b border-r pl-2 pt-1 flex"
                 style={{ 
                   height: `${rowHeight}px`,
-                  width: RESOURCE_COLUMN_WIDTH
+                  width: RESOURCE_COLUMN_WIDTH,
+                  boxShadow: '2px 0 4px rgba(0,0,0,0.1)'
                 }}
               >
                 <span className="font-medium text-sm truncate">{resource.name}</span>
@@ -371,7 +368,8 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent, onUpdateEven
                     }`}
                     style={{ 
                       height: `${rowHeight}px`,
-                      minWidth: MIN_CELL_WIDTH
+                      minWidth: MIN_CELL_WIDTH,
+                      marginLeft: 0
                     }}
                     onClick={() => {
                       if (!isDragging) {
@@ -380,10 +378,7 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent, onUpdateEven
                         setShowEventModal(true);
                       }
                     }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDragOverCell({ resourceId: resource.id, date: day });
-                    }}
+                    onDragOver={(e) => handleCellDragOver(e, resource.id, day)}
                     onDragLeave={handleCellDragLeave}
                     onDrop={(e) => handleCellDrop(e, resource.id, day)}
                   >
@@ -396,7 +391,8 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent, onUpdateEven
                             top: `${CELL_PADDING + (index * (EVENT_HEIGHT + EVENT_SPACING))}px`,
                             left: '4px',
                             right: '4px',
-                            height: `${EVENT_HEIGHT}px`
+                            height: `${EVENT_HEIGHT}px`,
+                            maxWidth: '100%'
                           }}
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -427,6 +423,20 @@ const TimelineGrid = ({ currentDate, resources, events, onAddEvent, onUpdateEven
           onCancel={() => {
             setShowDeleteAlert(false);
             setEventToDelete(null);
+          }}
+        />
+      )}
+
+      {showDetailsModal && (
+        <EventDetailsModal
+          event={selectedEvent}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedEvent(null);
+          }}
+          onEdit={() => {
+            setShowDetailsModal(false);
+            setShowEventModal(true);
           }}
         />
       )}

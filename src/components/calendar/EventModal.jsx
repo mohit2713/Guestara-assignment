@@ -96,6 +96,7 @@ const EventModal = ({ event, onSave, onClose, onDelete }) => {
                 <label className="block text-sm font-medium mb-1">Title</label>
                 <input
                   type="text"
+                  placeholder="Event Title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full border rounded-md p-2"
